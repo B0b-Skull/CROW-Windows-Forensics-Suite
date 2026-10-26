@@ -1,0 +1,26 @@
+# Ignore local host-specific forensic telemetry, dumps, databases, and generated reports
+Data/
+Reports/
+Evidence/
+Logs/
+data.js
+ForensicReport_*.html
+ForensicWorkstation_Installer.zip
+Tests/last_test_results.json
+Config/ui_preferences.json
+apply_system_modifications.ps1
+run_as_admin.cmd
+
+# Ignore generated host-specific Obsidian Vault notes (keep 00_Home_Index.md template)
+ObsidianVault/SystemBaselines/
+ObsidianVault/ThreatFindings/
+ObsidianVault/Investigations/
+ObsidianVault/RemediationHistory/
+ObsidianVault/Architecture/
+ObsidianVault/README_Vault_Index.md
+
+# Python & OS caches
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

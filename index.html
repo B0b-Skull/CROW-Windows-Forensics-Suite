@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CROW INNOVATIONS Windows System Analysis &amp; Forensics Suite</title>
+  <link rel="icon" type="image/png" href="assets/CROW_Logo-NoWords_Transparent_Glow-NoBackground.png">
+  <link rel="shortcut icon" type="image/x-icon" href="assets/crow-icon.ico">
+  <link rel="apple-touch-icon" href="assets/CROW_Logo-NoWords_Transparent_Glow-NoBackground.png">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('forensic_theme_mode');
+        if (savedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- Locked Sticky Header + Navigation Tabs Shell -->
+  <div class="sticky-top-shell">
+    <!-- Top Workstation Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <a href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" class="logo-icon" title="Explore CROW Innovations Community Tools &amp; Utilities — https://crowinnovations.com/tools.html">
+          <img src="assets/CROW_Logo-NoWords_Transparent_Glow-NoBackground.png" alt="CROW Innovations Logo (Light Mode)" class="crow-header-logo logo-light-only">
+          <img src="assets/CROW_Logo_White_TransparentBackground.png" alt="CROW Innovations Logo (Dark Mode)" class="crow-header-logo logo-dark-only">
+        </a>
+        <div class="brand-text">
+          <h1>
+            <img src="assets/crow-wordmark-light.png" alt="CROW" class="crow-title-wordmark logo-light-only">
+            <img src="assets/crow-wordmark-dark.png" alt="CROW" class="crow-title-wordmark logo-dark-only">
+            <span>INNOVATIONS Windows System Analysis &amp; Forensics Suite</span>
+          </h1>
+          <p>Live Hardware Telemetry &bull; Entity Correlation &bull; Binary Integrity &bull; Network &amp; Crash Forensics &bull; <a href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">CROW Tools &#8599;</a></p>
+        </div>
+      </div>
+
+      <div class="header-badges" id="headerMeta">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-teal" id="btnLiveTelemetry" onclick="toggleLiveTelemetry()" title="Toggle real-time 3-second auto-update of CPU Load, RAM, GPU Utilization, and VRAM Used (Zero external dependencies beyond PowerShell)">
+          &#128994; Live Telemetry: ON (3s)
+        </button>
+        <button class="btn" id="btnThemeToggle" onclick="toggleThemeMode()" title="Toggle Light / Dark View Mode">
+          &#127769; Dark Mode
+        </button>
+        <button class="btn btn-primary" onclick="executeScript('CORE-01')" title="Execute all read-only forensic scripts and refresh dashboard">
+          &#9654; Run Full Forensic Sweep (CORE-01)
+        </button>
+        <button class="btn btn-teal" onclick="executeScript('UTIL-01')" title="Sync findings and baselines to Obsidian Vault">
+          &#128218; Sync Obsidian Vault
+        </button>
+        <button class="btn" onclick="executeScript('UTIL-02')" title="Export all tables to Reports\CSV">
+          &#128190; Export All CSVs
+        </button>
+        <button class="btn" onclick="exportPortableHtmlReport()" title="Compile and download a single-file self-contained HTML executive report (UTIL-05)">
+          &#128230; Portable HTML Report
+        </button>
+        <button class="btn" onclick="window.print()" title="Print current investigation report">
+          &#128424; Print View
+        </button>
+      </div>
+    </header>
+
+    <!-- Live Script Job Progress Banner -->
+    <div id="jobStatusBar" class="job-status-bar">
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <span class="spinner"></span>
+        <strong id="jobStatusTitle">Executing PowerShell Forensic Script...</strong>
+        <span id="jobStatusDetail"></span>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="cancelActiveScript()">Cancel Job</button>
+    </div>
+
+    <!-- Locked Dashboard Views Navigation (Icons Removed from Tabs, Kept on Pages) -->
+    <nav class="app-tabs" aria-label="Dashboard Investigation Views">
+      <button class="tab-btn active" data-target="tab-overview">
+        System Overview
+      </button>
+      <button class="tab-btn" data-target="tab-processes">
+        Processes &amp; Services <span class="badge-count" id="badgeCountProcs">0</span>
+      </button>
+      <button class="tab-btn" data-target="tab-network">
+        Network Activity <span class="badge-count" id="badgeCountNet">0</span>
+      </button>
+      <button class="tab-btn" data-target="tab-events">
+        Event Logs <span class="badge-count" id="badgeCountEvents">0</span>
+      </button>
+      <button class="tab-btn" data-target="tab-integrity">
+        Binary Integrity <span class="badge-count" id="badgeCountIntegrity">0</span>
+      </button>
+      <button class="tab-btn" data-target="tab-security">
+        Security <span class="badge-count" id="badgeCountSecurity">0</span>
+      </button>
+      <button class="tab-btn" data-target="tab-memory">
+        Analysis <span class="badge-count" id="badgeCountMemory">0</span>
+      </button>
+      <button class="tab-btn" data-target="tab-scripts">
+        Scripts <span class="badge-count" id="badgeCountScripts">16</span>
+      </button>
+      <button class="tab-btn" data-target="tab-reports">
+        Reporting
+      </button>
+      <button class="tab-btn" data-target="tab-remediation">
+        Remediation
+      </button>
+      <button class="tab-btn" data-target="tab-about">
+        About
+      </button>
+    </nav>
+  </div>
+
+  <!-- Main Workstation Container -->
+  <main class="app-main">
+
+    <!-- ==================================================================
+         VIEW 1: SYSTEM OVERVIEW & IMMEDIATE INCIDENT SUMMARY
+         ================================================================== -->
+    <section id="tab-overview" class="tab-panel active">
+      <!-- CROW System Analysis & Forensic Suite Hero Showcase -->
+      <div class="crow-suite-hero" id="crowSuiteHeroBanner">
+        <div style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; flex: 1;">
+          <img src="assets/anime_banner.png" alt="CROW System Analysis &amp; Forensic Suite Banner" class="crow-suite-hero-banner-img">
+          <div style="min-width: 260px; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+              <span class="badge badge-info">CROW CYBER FORENSIC SUITE</span>
+              <span class="badge badge-success">READ-ONLY BY DEFAULT</span>
+            </div>
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: #f8fafc; margin-bottom: 0.3rem;">Analyze &bull; Detect &bull; Investigate &bull; Protect</h3>
+            <p style="font-size: 0.8rem; color: #cbd5e1; max-width: 620px;">Unified Windows endpoint telemetry, process-service-driver-socket correlation, cryptographic Authenticode &amp; VirusTotal validation, Super-Timeline reconstruction, and version-aware PowerShell automation.</p>
+          </div>
+        </div>
+        <div class="crow-posture-badges">
+          <div class="crow-posture-pill" onclick="activateTab('tab-integrity')" style="cursor: pointer;" title="Jump to Defensive Binary Integrity &amp; Authenticode Verification (View 5)">
+            <img src="assets/defensive-emblem.png" alt="Defensive Emblem">
+            <div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Defensive Posture</div>
+              <div style="font-size: 0.8rem; font-weight: 600; color: #f8fafc;">Integrity &amp; Hardening</div>
+            </div>
+          </div>
+          <div class="crow-posture-pill offensive" onclick="activateTab('tab-security')" style="cursor: pointer;" title="Jump to Offensive Threat Hunting, Persistence &amp; Rootkit Heuristics (View 6)">
+            <img src="assets/offensive-emblem.png" alt="Offensive Emblem">
+            <div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #f87171; text-transform: uppercase;">Threat Hunting</div>
+              <div style="font-size: 0.8rem; font-weight: 600; color: #f8fafc;">Persistence &amp; Heuristics</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-overview.png" alt="System Overview HUD Emblem" class="section-emblem">
+          <div>
+            <h2>System Overview, Hardware Health &amp; Active Incident Triage</h2>
+            <p>Real-time hardware configuration, resource telemetry, platform security posture, and evidence-backed findings for Display/GPU &amp; Shell/Application stability incidents.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="executeScript('HW-01')">&#9654; Refresh Hardware (HW-01)</button>
+          <button class="btn btn-teal btn-sm" onclick="executeScript('PERF-01', {SampleCount: 2, SampleIntervalSeconds: 1})">&#9654; Sample Performance (PERF-01)</button>
+          <button class="btn btn-sm" onclick="executeScript('INC-01', {DaysBack: 30})">&#9654; Re-Run Incident Triage (INC-01)</button>
+        </div>
+      </div>
+
+      <!-- Live Real-Time Hardware Telemetry Auto-Update Strip (PERF-02) -->
+      <div class="card live-telemetry-strip" id="liveTelemetryStrip" style="margin-bottom: 1.25rem; border-left: 4px solid var(--accent-teal);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            <span class="live-pulse-dot" id="livePulseDot"></span>
+            <strong style="font-size: 0.92rem;">Real-Time Hardware Telemetry Stream (<code>PERF-02</code>)</strong>
+            <span class="badge badge-success" id="liveStreamStatusBadge">Auto-Updating (3s Interval)</span>
+            <span style="font-size: 0.76rem; color: var(--text-muted);" id="liveStreamTimestamp">Powered by Native PowerShell WMI/CIM &bull; Zero External Dependencies</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button class="btn btn-sm" onclick="pollLiveTelemetry(true)" title="Force immediate telemetry sample">&#8635; Sample Now</button>
+            <button class="btn btn-sm" onclick="toggleLiveTelemetry()" id="btnLiveStripToggle">Pause Stream</button>
+          </div>
+        </div>
+        <div class="grid-kpi" style="margin-bottom: 0;">
+          <div class="live-metric-box">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">CPU Load</span>
+              <strong style="font-size: 1.15rem; font-family: 'JetBrains Mono', monospace;" id="liveValCpu">--%</strong>
+            </div>
+            <div class="bar-track"><div class="bar-fill blue" id="liveBarCpu" style="width: 0%; transition: width 0.45s ease;"></div></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;" id="liveSubCpu">Processor Total Load</div>
+          </div>
+          <div class="live-metric-box">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Physical RAM Used</span>
+              <strong style="font-size: 1.15rem; font-family: 'JetBrains Mono', monospace;" id="liveValRam">-- GB</strong>
+            </div>
+            <div class="bar-track"><div class="bar-fill teal" id="liveBarRam" style="width: 0%; transition: width 0.45s ease;"></div></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;" id="liveSubRam">Commit &amp; Kernel Pools</div>
+          </div>
+          <div class="live-metric-box">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">GPU Engine Load</span>
+              <strong style="font-size: 1.15rem; font-family: 'JetBrains Mono', monospace;" id="liveValGpu">--%</strong>
+            </div>
+            <div class="bar-track"><div class="bar-fill blue" id="liveBarGpu" style="width: 0%; transition: width 0.45s ease;"></div></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;" id="liveSubGpu">3D &amp; Copy Engines (WDDM)</div>
+          </div>
+          <div class="live-metric-box">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">GPU VRAM Used</span>
+              <strong style="font-size: 1.15rem; font-family: 'JetBrains Mono', monospace;" id="liveValVram">-- MB</strong>
+            </div>
+            <div class="bar-track"><div class="bar-fill teal" id="liveBarVram" style="width: 0%; transition: width 0.45s ease;"></div></div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;" id="liveSubVram">Dedicated + Shared GPU Memory</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid-kpi" id="kpiContainer"></div>
+
+      <!-- System Crash & BugCheck Detection Display (Clicks through to Analysis tab) -->
+      <div id="overviewCrashDetectionCard" style="margin-bottom: 1.25rem;"></div>
+
+      <!-- Dynamic Incident Investigation Alert Banner -->
+      <div class="alert-banner info" id="incidentSummaryBanner">
+        <div style="font-size: 1.4rem; line-height: 1;">&#8505;</div>
+        <div style="flex: 1;" id="incidentSummaryContent">
+          <h3>Automated System Stability &amp; Incident Forensic Diagnosis (`INC-01`)</h3>
+          <p>Loading host incident telemetry...</p>
+        </div>
+      </div>
+
+      <!-- Visual Charts Row -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>
+            <span>System Resource Utilization &amp; Memory Pools</span>
+            <span class="badge badge-info" id="perfTimestampBadge">Live Telemetry</span>
+          </h3>
+          <div id="chartSystemResources"></div>
+        </div>
+        <div class="chart-card">
+          <h3>
+            <span>Top Memory &amp; GPU Consuming Processes</span>
+            <span class="badge badge-neutral">Working Set &amp; VRAM</span>
+          </h3>
+          <div id="chartTopProcesses"></div>
+        </div>
+        <div class="chart-card">
+          <h3>
+            <span>Security, Integrity &amp; Event Severity Distribution</span>
+            <span class="badge badge-neutral">Correlated Counts</span>
+          </h3>
+          <div id="chartSecurityDistribution"></div>
+        </div>
+      </div>
+
+      <!-- Hardware & Platform Security Specifications -->
+      <div class="card">
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.85rem;">Hardware, Firmware, GPU &amp; Platform Security Inventory (`HW-01`)</h3>
+        <div class="specs-grid" id="specsGrid"></div>
+      </div>
+
+      <!-- Storage Volumes & Physical Disks Table -->
+      <div id="tableContainerStorage"></div>
+
+      <!-- Network Adapters & Peripherals Table -->
+      <div id="tableContainerAdapters"></div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 2: PROCESSES, SERVICES & DRIVERS CORRELATION
+         ================================================================== -->
+    <section id="tab-processes" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-processes.png" alt="Process &amp; Service Correlation HUD Emblem" class="section-emblem">
+          <div>
+            <h2>Unified Process, Service, Binary, Registry &amp; Network Correlation (`CORR-01`)</h2>
+            <p>Every running process is normalized with a creation-time-aware identifier and cross-referenced against its Parent Process (PPID), SHA-256 hash, Authenticode signature, hosted Windows Services, Registry persistence keys, active TCP/UDP sockets, and deterministic Threat/Risk assessments.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="executeScript('PROC-01')">&#9654; Run Process Scan (PROC-01)</button>
+          <button class="btn btn-teal btn-sm" onclick="executeScript('CORR-01')">&#9654; Run Entity Correlation (CORR-01)</button>
+          <button class="btn btn-sm" onclick="executeScript('SVC-01')">&#9654; Scan Services (SVC-01)</button>
+          <button class="btn btn-sm" onclick="executeScript('DRV-01')">&#9654; Scan Drivers (DRV-01)</button>
+        </div>
+      </div>
+
+      <div id="tableContainerCorrelatedProcs"></div>
+      <div id="tableContainerServices" style="margin-top: 1.5rem;"></div>
+      <div id="tableContainerDrivers" style="margin-top: 1.5rem;"></div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 3: NETWORK ACTIVITY & EXTERNAL IP INTELLIGENCE
+         ================================================================== -->
+    <section id="tab-network" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-network.png" alt="Network &amp; Threat Intel HUD Emblem" class="section-emblem dual-glow">
+          <div>
+            <h2>Network Forensics, Socket Correlation &amp; External IP Intelligence (`NET-01` / `NET-02`)</h2>
+            <p>Active TCP/UDP connections, listening ports, owning processes and services, verified connection durations (reporting <code>Unknown</code> when only a point-in-time snapshot is available), and public IP WHOIS/RDAP, ASN, Organization, Country, and Reverse DNS enrichment.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="executeScript('NET-01', {ResolveIPIntel: true})">&#9654; Refresh Network &amp; IP Intel (NET-01)</button>
+          <button class="btn btn-teal btn-sm" onclick="executeScript('NET-02')">&#9654; Refresh WHOIS/RDAP Cache (NET-02)</button>
+        </div>
+      </div>
+
+      <div class="charts-grid" id="networkChartsRow">
+        <div class="chart-card">
+          <h3><span>TCP Connection States &amp; Exposure Summary</span></h3>
+          <div id="chartNetworkStates"></div>
+        </div>
+        <div class="chart-card">
+          <h3><span>External Connections by Country / ASN Organization</span></h3>
+          <div id="chartNetworkCountries"></div>
+        </div>
+      </div>
+
+      <div id="tableContainerNetTCP"></div>
+      <div id="tableContainerNetUDP" style="margin-top: 1.5rem;"></div>
+      <div id="tableContainerDNSCache" style="margin-top: 1.5rem;"></div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 4: WINDOWS EVENT LOGS & INCIDENT TIMELINES
+         ================================================================== -->
+    <section id="tab-events" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-events.png" alt="Windows Events &amp; Super-Timeline HUD Emblem" class="section-emblem">
+          <div>
+            <h2>Multi-Channel Windows Event Log Analysis, Incident Clustering &amp; Super-Timeline (`EVT-01` / `INC-01` / `UTIL-04`)</h2>
+            <p>Correlated event records across System, Application, Setup, Windows Defender, PowerShell Operational, RestartManager, and Windows Error Reporting channels, plus a unified chronological Super-Timeline merging Process Starts, Network Sockets, Crash Dumps, Scheduled Tasks, and PowerShell ScriptBlocks.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="executeScript('EVT-01', {DaysBack: 7, MaxPerChannel: 60})">&#9654; Collect Event Logs (EVT-01)</button>
+          <button class="btn btn-teal btn-sm" onclick="executeScript('INC-01', {DaysBack: 30})">&#9654; Collect Incident Events (INC-01)</button>
+          <button class="btn btn-sm" onclick="executeScript('UTIL-04', {MaxTimelineEntries: 500})">&#9889; Generate Super-Timeline (UTIL-04)</button>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3><span>Event Log Channel Collection Status</span></h3>
+          <div id="chartEventChannels"></div>
+        </div>
+        <div class="chart-card">
+          <h3><span>Top Repeated Event Clusters (`EVT-01`)</span></h3>
+          <div id="chartEventClusters"></div>
+        </div>
+      </div>
+
+      <div id="tableContainerSuperTimeline" style="margin-bottom: 1.5rem;"></div>
+      <div id="tableContainerIncidentEvents"></div>
+      <div id="tableContainerEventClusters" style="margin-top: 1.5rem;"></div>
+      <div id="tableContainerAllEvents" style="margin-top: 1.5rem;"></div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 5: SYSTEM BINARY INTEGRITY & MICROSOFT VALIDATION
+         ================================================================== -->
+    <section id="tab-integrity" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/defensive-emblem.png" alt="Defensive Binary Integrity HUD Emblem" class="section-emblem">
+          <div>
+            <h2>Windows System Binary Integrity &amp; Microsoft Signature Validation (`INT-01`)</h2>
+            <p>Validates installed Windows system binaries in <code>System32</code>, kernel drivers, and active process executables using SHA-256 hashing, Authenticode &amp; Windows Catalog signature chain verification, Microsoft publisher validation, and version-matched local baseline comparisons.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="executeScript('INT-01', {IncludeActiveProcesses: true})">&#9654; Validate System Binaries (INT-01)</button>
+          <button class="btn btn-teal btn-sm" onclick="executeScript('INT-02')">&#9654; Rebuild Trusted Baseline (INT-02)</button>
+        </div>
+      </div>
+
+      <div class="alert-banner info">
+        <div style="font-size: 1.25rem;">&#8505;</div>
+        <div>
+          <h3>Authoritative Verification Methodology &amp; VirusTotal Hash-Only Operational Security</h3>
+          <p>Microsoft does not publish a single public hash API for every servicing build permutation. This module performs cryptographic <strong>Authenticode &amp; Windows Catalog signature verification</strong> (validating Microsoft Root Authority chains and <code>IsOSBinary</code> status) combined with <strong>version-matched SHA-256 baseline manifests</strong> and <strong>privacy-preserving VirusTotal SHA-256 lookups</strong> (never auto-uploading proprietary files without explicit operator action).</p>
+        </div>
+      </div>
+
+      <!-- On-Demand Binary, Service, Driver & DLL VirusTotal Lookup Card (INT-03) -->
+      <div class="card" style="border-left: 4px solid var(--accent-teal); margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="flex: 1; min-width: 280px;">
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
+              <span class="badge badge-info">INT-03</span>
+              <span class="badge badge-success">Hash-Only Privacy Safe</span>
+              <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0;">On-Demand Binary, Service, Driver &amp; DLL VirusTotal Inspector</h3>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Enter any local <code>.exe</code>, <code>.dll</code>, <code>.sys</code> driver path, service command string, or 64-character SHA-256 hash to compute cryptographic hashes (SHA-256/SHA-1/MD5), verify Authenticode certificates, and check multi-engine reputation on <strong>VirusTotal</strong> &amp; <strong>Hybrid-Analysis</strong>.</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <input type="text" id="inputVtTargetPath" class="search-box" style="min-width: 280px;" placeholder="File/DLL/Driver path (e.g. C:\Windows\System32\ntoskrnl.exe)">
+            <input type="text" id="inputVtSha256" class="search-box" style="min-width: 220px;" placeholder="Or SHA-256 hash (optional)">
+            <button class="btn btn-teal" onclick="triggerManualVirusTotalLookup()">&#128737; Check VirusTotal (INT-03)</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tableContainerBinaryIntegrity"></div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 6: SECURITY FINDINGS, PERSISTENCE & ROOTKIT AUDIT
+         ================================================================== -->
+    <section id="tab-security" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/offensive-emblem.png" alt="Offensive Security &amp; Threat Hunting HUD Emblem" class="section-emblem offensive-glow">
+          <div>
+            <h2>Malware, Persistence, Scheduled Tasks, BITS, PowerShell 4104 &amp; Rootkit Heuristics (`MAL-01` / `MAL-02` / `REG-01`)</h2>
+            <p>Evidence-driven security findings with distinct <strong>Threat Assessment</strong> (likelihood of malicious/unauthorized behavior) and <strong>Risk Assessment</strong> (impact on confidentiality, integrity, availability, or stability), plus deep Scheduled Task, BITS Queue, and PowerShell ScriptBlock 4104 transcripts.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="executeScript('MAL-01')">&#9654; Run Malware &amp; Persistence Audit (MAL-01)</button>
+          <button class="btn btn-teal btn-sm" onclick="executeScript('MAL-02')">&#9654; Audit Tasks, BITS &amp; PS 4104 (MAL-02)</button>
+          <button class="btn btn-sm" onclick="executeScript('REG-01')">&#9654; Run Registry &amp; IFEO Audit (REG-01)</button>
+        </div>
+      </div>
+
+      <div class="alert-banner warning">
+        <div style="font-size: 1.25rem;">&#9888;</div>
+        <div>
+          <h3>Kernel Integrity &amp; Rootkit Investigation Boundary</h3>
+          <p>A live operating system cannot definitively prove its own Ring-0 kernel integrity if a kernel-mode rootkit is subverting system calls. All findings below are grounded in observable WMI, Service Control Manager, Registry, Scheduled Task, BITS, PowerShell Operational, Driver, and Network evidence. Unsigned or unfamiliar software is never automatically labeled malicious without supporting behavioral or path anomalies.</p>
+        </div>
+      </div>
+
+      <div id="tableContainerSecurityFindings"></div>
+      <div id="tableContainerScheduledTasks" style="margin-top: 1.5rem;"></div>
+      <div id="tableContainerPowerShellScriptBlocks" style="margin-top: 1.5rem;"></div>
+      <div id="tableContainerBitsJobs" style="margin-top: 1.5rem;"></div>
+      <div id="tableContainerRegistryPersistence" style="margin-top: 1.5rem;"></div>
+      <div id="tableContainerShellExtensions" style="margin-top: 1.5rem;"></div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 7: FULL SYSTEM CRASH ROOT-CAUSE ANALYSIS & MEMORY FORENSICS
+         ================================================================== -->
+    <section id="tab-memory" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-memory.png" alt="Crash Root-Cause &amp; Memory Forensics HUD Emblem" class="section-emblem offensive-glow">
+          <div>
+            <h2>Full System Crash Root-Cause Engine, BugCheck Decoder &amp; Memory Dump Forensics (`MEM-01` / `MEM-02`)</h2>
+            <p>Automated Windows Kernel BugCheck decoder (<code>Kernel-Power</code> Event 41 XML, 64-bit Parameters 1&ndash;4, <code>volmgr</code> Event 161, and 30-minute Pre-Crash driver/update correlation that works even without Administrator rights), plus physical <code>MEMORY.DMP</code>, Minidump, <code>LiveKernelReports</code>, and User-Mode CrashDump inventory.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="executeScript('MEM-01')">&#9654; Run Crash &amp; Dump Analysis (MEM-01)</button>
+          <button class="btn btn-teal btn-sm" onclick="executeScript('INC-01', {DaysBack: 30})">&#9654; Refresh Incident Correlation (INC-01)</button>
+        </div>
+      </div>
+
+      <!-- Top Section: Full System Crash & BugCheck Root-Cause Analysis Engine -->
+      <div id="crashRootCauseEngineContainer" style="margin-bottom: 1.5rem;"></div>
+
+      <!-- System Kernel Crash & Unexpected Reboot History Table -->
+      <div id="tableContainerSystemCrashes" style="margin-bottom: 1.5rem;"></div>
+
+      <!-- On-Demand User-Authorized Process MiniDump Card -->
+      <div class="card" style="border-left: 4px solid var(--accent-teal); margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h3 style="font-size: 0.95rem; font-weight: 700;">On-Demand Process Memory MiniDump Acquisition (`MEM-02`)</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Captures a diagnostic user-mode minidump (via native <code>dbghelp.dll MiniDumpWriteDump</code>) into <code>Evidence\MemoryDumps\</code> and logs a SHA-256 chain-of-custody record. Never uploaded externally.</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <input type="number" id="inputDumpPid" class="search-box" style="min-width: 140px;" placeholder="Target PID (e.g. 1234)">
+            <input type="text" id="inputDumpReason" class="search-box" style="min-width: 220px;" placeholder="Forensic reason / case note" value="Manual Triage via Dashboard">
+            <button class="btn btn-teal" onclick="triggerProcessMiniDump()">&#128190; Capture Process MiniDump</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tableContainerCrashDumps"></div>
+      <div id="tableContainerTdrEvents" style="margin-top: 1.5rem;"></div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 8: CENTRALIZED SCRIPT EXECUTION CENTER
+         ================================================================== -->
+    <section id="tab-scripts" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-scripts.png" alt="PowerShell Script Execution HUD Emblem" class="section-emblem dual-glow">
+          <div>
+            <h2>Centralized PowerShell Script Execution Center (`Config\script_registry.json`)</h2>
+            <p>Execute any approved diagnostic, forensic, correlation, integrity, or export script directly from the browser. Arbitrary shell commands are strictly blocked; all script executions are parameter-validated, concurrency-locked, and logged to SQLite &amp; <code>Logs\script_execution.log</code>.</p>
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-primary btn-sm" onclick="refreshServerStatus()">&#8635; Refresh Execution History</button>
+        </div>
+      </div>
+
+      <!-- Discovered Local PowerShell Environment & Version-Specific Command Matrix -->
+      <div id="psVersionMatrixCard" class="card" style="margin-bottom: 1.5rem; border-left: 4px solid var(--accent-teal);"></div>
+
+      <!-- Script Allowlist Launcher Cards -->
+      <div class="scripts-grid" id="scriptCatalogGrid"></div>
+
+      <!-- Diagnostic Issue Explanation & Recommended Fix Banner (populated automatically if any script issue occurs) -->
+      <div id="scriptDiagnosticBanner" style="display: none; margin-bottom: 1.25rem;"></div>
+
+      <!-- Last Script Output Console -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 0.95rem; font-weight: 700;">Live Script Execution Output &amp; Structured JSON Inspector</h3>
+          <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('scriptConsoleOutput').textContent)">Copy Output</button>
+        </div>
+        <pre id="scriptConsoleOutput" class="code-block" style="max-height: 360px; overflow-y: auto; white-space: pre-wrap;">Select any script above and click "Execute Script" to view its live structured output here.</pre>
+      </div>
+
+      <!-- SQLite Script Execution Audit History -->
+      <div id="tableContainerScriptHistory"></div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 9: INVESTIGATION REPORTS & OBSIDIAN VAULT
+         ================================================================== -->
+    <section id="tab-reports" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-reports.png" alt="CROW Investigation Reports &amp; Vault HUD Emblem" class="section-emblem dual-glow">
+          <div>
+            <h2>Investigation Reports, Portable Single-File Bundle &amp; Obsidian Vault (`UTIL-01` / `UTIL-05`)</h2>
+            <p>Structured diagnostic report for Display/GPU &amp; Shell/Application stability incidents, single-file portable HTML executive report bundler, optional browser GPU/DOM telemetry snippet, and live Obsidian Vault Markdown viewer.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-teal btn-sm" onclick="exportPortableHtmlReport()">&#128230; Export Single-File HTML Report (UTIL-05)</button>
+          <button class="btn btn-primary btn-sm" onclick="executeScript('UTIL-01')">&#9654; Sync Obsidian Vault (UTIL-01)</button>
+          <button class="btn btn-sm" onclick="loadObsidianVault()">&#8635; Reload Vault Notes</button>
+          <button class="btn btn-sm" onclick="window.print()">&#128424; Print Report</button>
+        </div>
+      </div>
+
+      <!-- Single-File Portable Executive HTML Report Card (UTIL-05) -->
+      <div class="card" style="margin-bottom: 1.25rem; border-left: 4px solid var(--accent-teal);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.2rem;">
+              <span class="badge badge-info">UTIL-05</span>
+              <span class="badge badge-success">SHA-256 Tamper-Evident</span>
+              <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0;">Single-File Portable Executive HTML Report Bundler</h3>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Bundles the entire HTML layout, Light/Dark CSS stylesheet, JavaScript table/chart engine, Obsidian Vault notes, and current forensic telemetry snapshot into a single <code>.html</code> file (saved in <code>Reports\Executive\</code> and downloaded to your browser) with zero external file dependencies.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-teal btn-sm" onclick="exportPortableHtmlReport()">&#128230; Generate &amp; Download Portable HTML Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 2 Deliverable Table -->
+      <div id="tableContainerPhase2Report"></div>
+
+      <!-- Browser Diagnostic Snippet Card -->
+      <div class="card" style="margin-top: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h3 style="font-size: 0.95rem; font-weight: 700;">Optional Browser GPU, WebSocket &amp; DOM Diagnostic Observer (`UTIL-03`)</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Read-only JavaScript snippet generated at <code>Data\Investigations\browser_diagnostics_snippet.js</code>. Paste into Chrome/Edge DevTools Console on any web application tab to distinguish Windows GPU TDR resets (<code>webglcontextlost</code>) from WebSocket disconnects or DOM full-page rerenders.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-sm" onclick="executeScript('UTIL-03')">Regenerate Snippet (UTIL-03)</button>
+            <button class="btn btn-primary btn-sm" onclick="copyBrowserSnippet()">Copy JS Snippet</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Obsidian Vault Browser -->
+      <div class="card" style="margin-top: 1.25rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">Obsidian Vault Knowledge Repository (`ObsidianVault\*`)</h3>
+        <div class="vault-layout">
+          <div class="vault-sidebar" id="vaultSidebarList">
+            <!-- Populated dynamically -->
+          </div>
+          <div class="vault-content" id="vaultNoteViewer">Select a Markdown record on the left to inspect its contents.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 10: REMEDIATION & PRESERVED BASELINE AUDIT
+         ================================================================== -->
+    <section id="tab-remediation" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-remediation.png" alt="Defensive System Remediation &amp; Hardening HUD Emblem" class="section-emblem">
+          <div>
+            <h2>Controlled Remediation &amp; Preserved System Optimization Audit (`REM-01`)</h2>
+            <p>Investigation and remediation are strictly separated. All actions below default to <strong>Read-Only Dry-Run Preview</strong> and require explicit user authorization before modifying any registry key or service state.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-banner info">
+        <div style="font-size: 1.25rem;">&#128274;</div>
+        <div>
+          <h3>Explicit Authorization Requirement &amp; PowerShell Version Compatibility</h3>
+          <p>No remediation script is ever executed automatically. Click <strong>Dry-Run Preview</strong> on any card below to inspect the exact current registry/service value, plain-English issue explanation, and verification command. All remediation commands below automatically adapt to the local system's discovered PowerShell version.</p>
+        </div>
+      </div>
+
+      <!-- Discovered PowerShell Version Switcher for Remediation Commands -->
+      <div id="remVersionSelectorBar" class="card" style="margin-bottom: 1.25rem; padding: 0.9rem 1.15rem; border-left: 4px solid var(--accent-teal);"></div>
+
+      <!-- Controlled Remediation Cards -->
+      <div id="remediationCardsContainer" class="scripts-grid"></div>
+
+      <!-- Preserved Legacy Baseline Audit Section (Shown when legacy baseline data is present) -->
+      <div class="card" id="legacyBaselineCard" style="margin-top: 2rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">Preserved Baseline Audit: Logon Lag, Shutdown Delay (Event 7043) &amp; Resource Bloat</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">Original workstation audit findings and one-click PowerShell optimization steps preserved from <code>diagnostics_data.json</code>.</p>
+
+        <div id="shutdownCausesContainer" style="margin-bottom: 1.25rem;"></div>
+        <div id="tableContainerLegacyLogon"></div>
+        <div id="tableContainerLegacyBloat" style="margin-top: 1.25rem;"></div>
+        <div id="actionPlanContainer" style="margin-top: 1.25rem;"></div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 11: ABOUT (CROW INNOVATIONS — CYBER RESEARCH IN OFFENSIVE WARFARE)
+         ================================================================== -->
+    <section id="tab-about" class="tab-panel">
+      <div class="section-header">
+        <div class="section-header-brand">
+          <img src="assets/emblem-about.png" alt="About CROW Innovations HUD Emblem" class="section-emblem dual-glow">
+          <div>
+            <h2>About CROW INNOVATIONS &mdash; Cyber Research in Offensive Warfare</h2>
+            <p>Adversary simulation, exploitation research, cyber forensics, and applied artificial intelligence supporting ethical Red Teams, Blue Teams, and high-consequence government &amp; commercial missions.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <a class="btn btn-teal" href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+            &#128736; CROW Community Tools &#8599;
+          </a>
+          <a class="btn btn-primary" href="https://crowinnovations.com" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+            &#127760; Visit CROWINNOVATIONS.COM &#8599;
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero Banner & CROW Official About Summary Card -->
+      <div class="crow-suite-hero" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 1.75rem; flex-wrap: wrap; width: 100%; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; flex: 1; min-width: 300px;">
+            <a href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" title="Explore CROW Innovations Tools (https://crowinnovations.com/tools.html)">
+              <img src="assets/CROW_Logo_Transparent_Glow-2.png" alt="CROW Innovations Official Logo" style="height: 135px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));">
+            </a>
+            <div style="flex: 1; min-width: 260px;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; flex-wrap: wrap;">
+                <span class="badge badge-info">CROW &bull; CYBER RESEARCH IN OFFENSIVE WARFARE</span>
+                <span class="badge badge-success">16+ YEARS OPERATIONAL EXPERIENCE</span>
+                <span class="badge badge-critical">ETHICAL RED &amp; BLUE TEAMS</span>
+              </div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: #f8fafc; margin-bottom: 0.45rem;">Who We Are: Operational Experience &amp; Applied Security</h3>
+              <p style="font-size: 0.86rem; color: #e2e8f0; line-height: 1.62; max-width: 820px; margin-bottom: 0.55rem;">
+                <strong>CROW</strong> stands for <strong>Cyber Research in Offensive Warfare</strong>. Our purpose is to understand how complex digital systems can be compromised&mdash;through adversary simulation, exploitation research, and applied artificial intelligence&mdash;and use that empirical knowledge to harden security postures, develop offensive and defensive tooling, and support high-consequence government and commercial missions.
+              </p>
+              <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.58; max-width: 820px;">
+                Our work is grounded in over <strong>16 years of operational experience</strong> in offensive cyber operations, exploitation analysis, penetration testing, malware analysis, and cyber forensics. Whether conducting a technical assessment, engineering a custom research utility, or integrating AI into an organization&rsquo;s security workflow, our approach remains the same: <em>investigate deeply, rigorously validate assumptions, and deliver actionable intelligence</em>.
+              </p>
+              <div style="margin-top: 0.95rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <a class="btn btn-teal" href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                  &#128640; Explore CROW Tools &amp; Utilities (crowinnovations.com/tools.html) &#8599;
+                </a>
+                <a class="btn" style="background: rgba(255,255,255,0.12); color: #ffffff; border-color: rgba(255,255,255,0.28); text-decoration: none;" href="https://crowinnovations.com/services.html" target="_blank" rel="noopener noreferrer">
+                  &#128737; Technical Services &amp; Auditing &#8599;
+                </a>
+                <a class="btn" style="background: rgba(255,255,255,0.12); color: #ffffff; border-color: rgba(255,255,255,0.28); text-decoration: none;" href="https://crowinnovations.com/research.html" target="_blank" rel="noopener noreferrer">
+                  &#129504; Offensive AI &amp; Security Research &#8599;
+                </a>
+              </div>
+            </div>
+          </div>
+          <img src="assets/anime_banner.png" alt="CROW System Analysis &amp; Forensic Suite" style="max-height: 175px; width: auto; max-width: 100%; object-fit: contain;">
+        </div>
+      </div>
+
+      <!-- Three Core Pillars from crowinnovations.com/#about -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="card" style="border-left: 4px solid var(--accent-blue); display: flex; align-items: center; gap: 1rem;">
+          <div style="font-size: 1.85rem; font-weight: 800; color: var(--accent-blue); font-family: 'JetBrains Mono', monospace; min-width: 58px; text-align: center;">16+</div>
+          <div>
+            <h3 style="font-size: 0.96rem; font-weight: 700; margin-bottom: 0.2rem;">Years Offensive Cyber &amp; Forensics Experience</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Operational background spanning offensive cyber operations, vulnerability discovery, exploit engineering, malware reverse engineering, and endpoint DFIR.</p>
+          </div>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--accent-teal); display: flex; align-items: center; gap: 1rem;">
+          <div style="font-size: 1.85rem; font-weight: 800; color: var(--accent-teal); font-family: 'JetBrains Mono', monospace; min-width: 58px; text-align: center;">AI</div>
+          <div>
+            <h3 style="font-size: 0.96rem; font-weight: 700; margin-bottom: 0.2rem;">Applied AI &amp; Sovereign Local Model Workflows</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Practical integration of private, local, and sovereign AI workflows with strict human oversight, access controls, and adversarial boundary testing.</p>
+          </div>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--status-critical); display: flex; align-items: center; gap: 1rem;">
+          <div style="font-size: 1.85rem; font-weight: 800; color: var(--status-critical); font-family: 'JetBrains Mono', monospace; min-width: 58px; text-align: center;">R&amp;D</div>
+          <div>
+            <h3 style="font-size: 0.96rem; font-weight: 700; margin-bottom: 0.2rem;">Custom Tools &amp; Mission Automation</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Bespoke research utilities, zero-dependency forensic suites, and technical mission support built from real-world offensive and defensive requirements.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dual Red & Blue Team Pillar Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+        <!-- Blue Team / Defensive Operations Card -->
+        <div class="card" style="border-top: 4px solid #0284c7; display: flex; flex-direction: column; gap: 0.85rem;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="assets/defensive-emblem.png" alt="Blue Team Defensive Emblem" style="width: 84px; height: 84px; object-fit: contain; flex-shrink: 0;">
+            <div>
+              <span class="badge badge-info" style="margin-bottom: 0.25rem;">BLUE TEAM, DFIR &amp; COMPLIANCE</span>
+              <h3 style="font-size: 1.1rem; font-weight: 700;">Cyber Defense, Malware Forensics &amp; Architecture Hardening</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Supporting SOC analysts, DFIR investigators, and system administrators with empirical telemetry.</p>
+            </div>
+          </div>
+          <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55;">
+            CROW Innovations equips Blue Teams and enterprise defenders with both high-assurance consulting services and standalone endpoint forensics:
+          </p>
+          <ul style="font-size: 0.82rem; color: var(--text-secondary); padding-left: 1.25rem; line-height: 1.65;">
+            <li><strong>Compliance Auditing &amp; Assessment:</strong> Technical gap analysis and readiness verification across <strong>NIST SP 800</strong>, <strong>CMMC</strong>, <strong>FedRAMP</strong>, <strong>FISMA</strong>, <strong>PCI DSS</strong>, <strong>HIPAA</strong>, <strong>SOC 2</strong>, and <strong>ISO/IEC 27001</strong>.</li>
+            <li><strong>Malware Analysis &amp; Cyber Forensics:</strong> Static/dynamic reverse engineering, C2 protocol extraction, memory triage, and actionable YARA/Sigma detection engineering.</li>
+            <li><strong>Cryptographic Binary Integrity (<code>INT-01</code> / <code>INT-03</code>):</strong> Verifies SHA-256 hashes, Microsoft Authenticode chains, Windows Catalog signatures, and privacy-safe <strong>VirusTotal</strong> &amp; <strong>Hybrid-Analysis</strong> reputation.</li>
+            <li><strong>Unified Super-Timeline &amp; Controlled Remediation (<code>UTIL-04</code> / <code>REM-01</code>):</strong> Correlates multi-channel Event Logs, process starts, sockets, and crash dumps while keeping remediation strictly dry-run previewed.</li>
+          </ul>
+          <div style="margin-top: auto; padding-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="activateTab('tab-integrity')">&#128737; Launch Binary Integrity &amp; VirusTotal View</button>
+            <button class="btn btn-sm" onclick="activateTab('tab-remediation')">&#128274; Open Controlled Remediation</button>
+          </div>
+        </div>
+
+        <!-- Red Team / Ethical Adversary Simulation & Threat Hunting Card -->
+        <div class="card" style="border-top: 4px solid #dc2626; display: flex; flex-direction: column; gap: 0.85rem;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="assets/offensive-emblem.png" alt="Red Team Offensive Emblem" style="width: 84px; height: 84px; object-fit: contain; flex-shrink: 0;">
+            <div>
+              <span class="badge badge-critical" style="margin-bottom: 0.25rem;">ETHICAL RED TEAM &amp; OFFENSIVE R&amp;D</span>
+              <h3 style="font-size: 1.1rem; font-weight: 700;">Adversary Simulation, Exploitation &amp; Offensive AI Research</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Realistic offensive operations and vulnerability research to expose attack paths before adversaries do.</p>
+            </div>
+          </div>
+          <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55;">
+            Ethical Red Teams, Purple Teams, and Vulnerability Researchers rely on CROW Innovations to validate detection coverage and test complex attack surfaces:
+          </p>
+          <ul style="font-size: 0.82rem; color: var(--text-secondary); padding-left: 1.25rem; line-height: 1.65;">
+            <li><strong>Red Teaming &amp; Penetration Testing:</strong> Authorized adversary simulation across enterprise networks, web/cloud applications, and Active Directory / identity infrastructure.</li>
+            <li><strong>Vulnerability &amp; Exploitation Research:</strong> Zero-day discovery, memory corruption analysis, fuzzing harness engineering, and reproducible proof-of-concept validation.</li>
+            <li><strong>Adversarial AI &amp; Agent Boundary Testing:</strong> Researching LLM jailbreaks, prompt-injection attack graphs, and autonomous agent tool-call boundary escapes.</li>
+            <li><strong>Endpoint Persistence &amp; Tradecraft Audit (<code>MAL-01</code> / <code>REG-01</code> / <code>CORR-01</code>):</strong> Inspects Scheduled Tasks, BITS queues, PowerShell Event 4104 ScriptBlocks, IFEO debuggers, and socket-to-PID mappings.</li>
+          </ul>
+          <div style="margin-top: auto; padding-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-danger btn-sm" onclick="activateTab('tab-security')">&#128293; Launch Threat Hunting &amp; Persistence View</button>
+            <button class="btn btn-sm" onclick="activateTab('tab-network')">&#127760; Open Network &amp; Socket Recon</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Focused Technical Services & Research Grid (Summarized from crowinnovations.com/services.html & research.html) -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+          <div>
+            <span class="badge badge-info" style="margin-bottom: 0.25rem;">CROWINNOVATIONS.COM SUMMARY</span>
+            <h3 style="font-size: 1.08rem; font-weight: 700;">Focused Technical Services &amp; Active Research Domains</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Core capabilities delivered by CROW Innovations across government, defense, and commercial engagements.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a class="btn btn-sm" href="https://crowinnovations.com/services.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">All Services &#8599;</a>
+            <a class="btn btn-sm" href="https://crowinnovations.com/research.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">Research Agenda &#8599;</a>
+            <a class="btn btn-sm" href="https://crowinnovations.com/wiki.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">Reference Wiki &amp; NIST/SCIF Dossier &#8599;</a>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 0.9rem;">
+          <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--accent-blue);">1. Cybersecurity Compliance &amp; Auditing</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Comprehensive security assessments and remediation roadmaps aligned with PCI DSS, HIPAA, NIST SP 800-53 / 800-171, CMMC, FedRAMP, FISMA, SOC 2, and ISO/IEC 27001.</p>
+          </div>
+          <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--accent-teal);">2. AI Integration &amp; Private AI Engineering</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Designing local and sovereign AI deployments that keep sensitive data on-premises while enforcing strict human oversight, RBAC, and prompt/tool-call security boundaries.</p>
+          </div>
+          <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--status-critical);">3. Red Teaming &amp; Penetration Testing</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Objective-based adversary emulation testing real-world detection, response, lateral movement resistance, and identity security controls across complex environments.</p>
+          </div>
+          <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--accent-blue);">4. Vulnerability &amp; Exploitation Research</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Deep binary auditing, protocol fuzzing, crash root-cause analysis, and exploitability assessment for embedded, kernel, and enterprise software stacks.</p>
+          </div>
+          <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--accent-teal);">5. Malware Analysis &amp; Cyber Forensics</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Rapid incident triage, obfuscated payload unpacking, host memory &amp; dump forensics, and automated malware triage pipelines.</p>
+          </div>
+          <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--status-critical);">6. Community Tools &amp; Mission Support</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">Open-access cyber utilities&mdash;including Live Threat Telemetry Maps, Client Footprint &amp; Web Recon, Identity Attribution, and this Windows Forensics Suite.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CROW Community Tools Principles & Contact Callout (https://crowinnovations.com/tools.html) -->
+      <div class="card" style="border-left: 4px solid var(--accent-teal);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+          <div style="flex: 1; min-width: 300px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+              <span class="badge badge-success">ZERO SERVER LOGGING</span>
+              <span class="badge badge-info">OPERATIONAL FIDELITY</span>
+              <span class="badge badge-info">ACTIONABLE DATA</span>
+            </div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;">CROW Community Tools Standard &bull; Standalone Zero-Dependency Design</h3>
+            <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 0.5rem;">
+              Every CROW tool&mdash;both on <a href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" style="font-weight: 700; color: var(--accent-blue);">crowinnovations.com/tools.html</a> and in this standalone Windows Forensics Workstation&mdash;is built on four core principles: <strong>Zero Server Logging</strong> (runs locally/client-side without harvesting telemetry), <strong>Operational Fidelity</strong> (engineered from real offensive and forensic tradecraft), <strong>Actionable Data</strong>, and <strong>Zero External Bloat</strong> (real-time CPU, RAM, GPU, and VRAM telemetry streams natively via PowerShell <code>PERF-02</code> without requiring external servers or databases).
+            </p>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.55;">
+              <strong>Official Portal &amp; Tools:</strong> <a href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" style="font-weight: 700; color: var(--accent-blue);">https://crowinnovations.com/tools.html</a> &bull;
+              <strong>General &amp; Scoping Inquiries:</strong> <a href="mailto:contact@crowinnovations.com" style="color: var(--accent-blue); text-decoration: none;">contact@crowinnovations.com</a> &bull;
+              <strong>Security Reporting:</strong> <a href="mailto:security@crowinnovations.com" style="color: var(--accent-blue); text-decoration: none;">security@crowinnovations.com</a>
+            </p>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.55rem; padding: 0.85rem 1.25rem; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+            <a href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" title="Visit https://crowinnovations.com/tools.html">
+              <img src="assets/CROW_Logo-NoWords_Transparent_Glow-NoBackground.png" alt="CROW Icon" style="width: 72px; height: 72px; object-fit: contain;">
+            </a>
+            <a class="btn btn-primary" href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+              &#128736; CROWINNOVATIONS.COM/TOOLS &#8599;
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Expandable Row Details Modal -->
+  <div id="detailModalBackdrop" class="modal-backdrop" onclick="if(event.target===this) closeDetailModal()">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+      <div class="modal-header">
+        <h3 id="detailModalTitle">Entity Forensic Details</h3>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-sm" id="detailModalCopyBtn">Copy JSON</button>
+          <button class="btn btn-sm" onclick="closeDetailModal()">&#10005; Close</button>
+        </div>
+      </div>
+      <div class="modal-body" id="detailModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Global Footer -->
+  <footer class="app-footer">
+    <p>CROW INNOVATIONS Windows System Analysis &amp; Forensics Suite &bull; Host: <strong id="footerHostName">Local Windows Host</strong> &bull; Read-Only Forensic Collection by Default &bull; <a href="#" onclick="activateTab('tab-about'); return false;" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">About CROW Innovations</a> &bull; <a href="https://www.crowinnovations.com" target="_blank" rel="noopener noreferrer" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">WWW.CROWINNOVATIONS.COM &#8599;</a></p>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast"></div>
+
+  <!-- Local Data Bundle (Zero-CORS fallback + Live Server Hydration) -->
+  <script src="data.js"></script>
+  <!-- Dashboard Application Logic -->
+  <script src="report.js"></script>
+</body>
+</html>
