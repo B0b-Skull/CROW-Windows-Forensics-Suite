@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://crowinnovations.com/tools.html">
+<a href="https://crowinnovations.com/tools.html" target="_blank" rel="noopener noreferrer">
   <img src="assets/CROW_Logo-NoWords_Transparent_Glow-NoBackground.png" alt="CROW Innovations Logo" width="220" />
 </a>
 
