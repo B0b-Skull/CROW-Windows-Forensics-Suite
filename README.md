@@ -1,7 +1,7 @@
 <div align="center">
 
 <a href="https://crowinnovations.com/tools.html">
-  <img src="assets/CROW_Logo_Transparent_Glow-2.png" alt="CROW Innovations Logo" width="220" />
+  <img src="assets/CROW_Logo-NoWords_Transparent_Glow-NoBackground.png" alt="CROW Innovations Logo" width="220" />
 </a>
 
 # 🛡️ CROW INNOVATIONS Windows System Analysis & Forensics Suite
